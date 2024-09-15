@@ -1,6 +1,7 @@
-import { IsString } from 'class-validator';
+import { IsJWT, IsString } from 'class-validator';
 
 export class ConfirmEmailDto {
   @IsString()
+  @IsJWT()
   token: string;
 }

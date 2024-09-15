@@ -1,9 +1,9 @@
-import { Controller, Post, Body, Param, UsePipes } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RecoverPasswordDto } from './dto/recover-password.dto';
-import { JwtValidationPipe } from 'src/common/pipes/jwt-validation.pipe';
+import { ConfirmEmailDto } from './dto/confirm-email.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -24,9 +24,9 @@ export class AuthController {
     return this.authService.recoverPassword(recoverPasswordDto.email);
   }
 
-  @Post('confirm/:token')
-  @UsePipes(JwtValidationPipe)
-  async confirmEmail(@Param('token') token: string) {
+  @Get('confirm')
+  async confirmEmail(@Query() confirmEmailDto: ConfirmEmailDto) {
+    const { token } = confirmEmailDto;
     return this.authService.confirmEmail(token);
   }
 }

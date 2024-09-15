@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
@@ -25,7 +25,8 @@ export class AuthService {
     const token = this.jwtService.sign({ id: user.id });
     const confirmationUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/confirm?token=${token}`;
 
-    await this.emailService.sendEmail(
+    //await this.emailService.sendEmail(
+    this.emailService.sendEmail(
       user.email,
       'Confirma tu registro',
       'confirmation',
@@ -42,7 +43,7 @@ export class AuthService {
     );
 
     if (!user) {
-      throw new Error('Credenciales inválidas');
+      throw new UnauthorizedException('Invalid crededntials');
     }
 
     const payload = { id: user.id };
@@ -71,8 +72,9 @@ export class AuthService {
   }
 
   async confirmEmail(token: string) {
-    const payload = this.jwtService.verify(token);
-    const user = await this.usersService.findOne(payload.id);
+    console.log({ token });
+    const { id } = this.jwtService.verify(token);
+    const user = await this.usersService.findOne(id);
 
     if (!user) {
       throw new Error('Token inválido');
