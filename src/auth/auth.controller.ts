@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { LoginDto } from './dto/login.dto';
+import { RecoverPasswordDto } from './dto/recover-password.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -11,25 +13,18 @@ export class AuthController {
     return this.authService.register(createUserDto);
   }
 
-  @Get('confirm')
-  async confirmEmail(@Query('token') token: string) {
-    return this.authService.confirmEmail(token);
-  }
-
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    const user = await this.authService.validateUser(
-      loginDto.email,
-      loginDto.password,
-    );
-    const payload = { id: user.id };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+    return this.authService.login(loginDto);
   }
 
   @Post('recover-password')
-  async recoverPassword(@Body('email') email: string) {
-    return this.authService.recoverPassword(email);
+  async recoverPassword(@Body() recoverPasswordDto: RecoverPasswordDto) {
+    return this.authService.recoverPassword(recoverPasswordDto.email);
+  }
+
+  @Post('confirm')
+  async confirmEmail(@Body('token') token: string) {
+    return this.authService.confirmEmail(token);
   }
 }

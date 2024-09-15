@@ -1,17 +1,18 @@
-import * as bcrypt from 'bcrypt';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 
-import { UsersService } from '../users/users.service';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { EmailService } from '../email/email.service';
+import { LoginDto } from './dto/login.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private emailService: EmailService, // Inyectar el servicio de correo
+    private emailService: EmailService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
@@ -21,19 +22,33 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    // Generar el token JWT
     const token = this.jwtService.sign({ id: user.id });
-    const confirmationUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/confirm?token=${token}`;
+    const confirmationUrl = `${process.env.HOST}:${process.env.APP_PORT}/api/auth/confirm?token=${token}`;
 
-    // Enviar el email de confirmación
     await this.emailService.sendEmail(
       user.email,
       'Confirma tu registro',
-      'confirmation', // Template a usar
-      { name: user.email, url: confirmationUrl }, // Contexto para la plantilla
+      'confirmation',
+      { name: user.email, url: confirmationUrl },
     );
 
     return { message: 'Usuario registrado. Verifica tu email para confirmar.' };
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.usersService.validateCredentials(
+      loginDto.email,
+      loginDto.password,
+    );
+
+    if (!user) {
+      throw new Error('Credenciales inválidas');
+    }
+
+    const payload = { id: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
   async recoverPassword(email: string) {
@@ -43,9 +58,8 @@ export class AuthService {
     }
 
     const token = this.jwtService.sign({ id: user.id });
-    const resetUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/reset-password?token=${token}`;
+    const resetUrl = `${process.env.HOST}:${process.env.APP_PORT}/api/auth/reset-password?token=${token}`;
 
-    // Enviar el email de recuperación de contraseña
     await this.emailService.sendEmail(
       user.email,
       'Recupera tu contraseña',
@@ -54,5 +68,17 @@ export class AuthService {
     );
 
     return { message: 'Revisa tu correo para restablecer la contraseña.' };
+  }
+
+  async confirmEmail(token: string) {
+    const payload = this.jwtService.verify(token);
+    const user = await this.usersService.findOne(payload.id);
+
+    if (!user) {
+      throw new Error('Token inválido');
+    }
+
+    user.isEmailConfirmed = true;
+    return this.usersService.update(user.id, user);
   }
 }
