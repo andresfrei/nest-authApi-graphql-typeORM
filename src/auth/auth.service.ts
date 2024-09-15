@@ -23,7 +23,7 @@ export class AuthService {
     });
 
     const token = this.jwtService.sign({ id: user.id });
-    const confirmationUrl = `${process.env.HOST}:${process.env.APP_PORT}/api/auth/confirm?token=${token}`;
+    const confirmationUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/confirm?token=${token}`;
 
     await this.emailService.sendEmail(
       user.email,
@@ -58,7 +58,7 @@ export class AuthService {
     }
 
     const token = this.jwtService.sign({ id: user.id });
-    const resetUrl = `${process.env.HOST}:${process.env.APP_PORT}/api/auth/reset-password?token=${token}`;
+    const resetUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/reset-password?token=${token}`;
 
     await this.emailService.sendEmail(
       user.email,

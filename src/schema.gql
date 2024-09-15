@@ -1,0 +1,24 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  id: String!
+  email: String!
+  isEmailConfirmed: Boolean!
+}
+
+type Query {
+  me: User!
+}
+
+type Mutation {
+  updateUser(updateUserInput: UpdateUserDto!): User!
+}
+
+input UpdateUserDto {
+  email: String
+  password: String
+  firstName: String
+  lastName: String
+}

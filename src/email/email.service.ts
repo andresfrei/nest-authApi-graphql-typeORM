@@ -23,6 +23,7 @@ export class EmailService {
 
   async sendEmail(to: string, subject: string, template: string, context: any) {
     const templatePath = this.getTemplatePath(template);
+    console.log({ templatePath });
     const templateContent = readFileSync(templatePath, 'utf-8');
     const compiledTemplate = handlebars.compile(templateContent);
     const html = compiledTemplate(context);
@@ -38,6 +39,6 @@ export class EmailService {
   }
 
   private getTemplatePath(template: string): string {
-    return join(__dirname, 'templates', `${template}.hbs`);
+    return join(process.cwd(), 'src/email/templates', `${template}.hbs`);
   }
 }
