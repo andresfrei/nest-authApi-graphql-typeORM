@@ -4,11 +4,9 @@
 
 type User {
   id: ID!
-  email: String!
   firstName: String
   lastName: String
   avatarUrl: String
-  isEmailConfirmed: Boolean!
 }
 
 type Query {

@@ -34,7 +34,7 @@ export class EmailService {
       html,
     };
 
-    this.transporter.sendMail(mailOptions).then(() => console.log({ subject }));
+    this.transporter.sendMail(mailOptions);
   }
 
   private getTemplatePath(template: string): string {

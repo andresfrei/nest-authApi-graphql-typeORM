@@ -1,86 +1,104 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { compareSync, hashSync } from 'bcrypt';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
 
-import { CreateUserDto } from '../users/dto/create-user.dto';
+import { Auth } from './entities/auth.entity';
 import { EmailService } from '../email/email.service';
+import { InjectRepository } from '@nestjs/typeorm';
 import { LoginDto } from './dto/login.dto';
-import { UsersService } from '../users/users.service';
+import { RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
+    @InjectRepository(Auth)
+    private readonly authRepository: Repository<Auth>,
     private jwtService: JwtService,
     private emailService: EmailService,
   ) {}
 
-  async register(createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = await this.usersService.create({
-      ...createUserDto,
-      password: hashedPassword,
+  async register(registerUserDto: RegisterDto) {
+    const { password, email } = registerUserDto;
+    const auth = this.authRepository.create({
+      email,
+      password: hashSync(password, 10),
     });
 
-    const token = this.jwtService.sign({ id: user.id });
+    await this.authRepository.save(auth);
+
+    const token = this.jwtService.sign({ email: auth.email });
     const confirmationUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/confirm?token=${token}`;
 
-    //await this.emailService.sendEmail(
     this.emailService.sendEmail(
-      user.email,
+      auth.email,
       'Confirma tu registro',
       'confirmation',
-      { name: user.email, url: confirmationUrl },
+      { name: auth.email, url: confirmationUrl },
     );
 
-    return { message: 'Usuario registrado. Verifica tu email para confirmar.' };
+    return { message: 'Registered user. Please check your email to confirm.' };
+  }
+
+  async findById(id: string): Promise<Auth> {
+    const auth = await this.authRepository.findOne({ where: { id } });
+    if (!auth) throw new UnauthorizedException('User not found');
+    return auth;
+  }
+
+  async findByEmail(email: string): Promise<Auth> {
+    const auth = await this.authRepository.findOne({ where: { email } });
+    if (!auth) throw new UnauthorizedException('Email no register');
+    return auth;
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.usersService.validateCredentials(
-      loginDto.email,
-      loginDto.password,
-    );
+    const { email, password } = loginDto;
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid crededntials');
-    }
+    const auth = await this.findByEmail(email);
 
-    const payload = { id: user.id };
+    if (!compareSync(password, auth.password))
+      throw new UnauthorizedException('Invalid credentials');
+
+    if (!auth.isEmailConfirmed)
+      throw new UnauthorizedException('Email not confirmed');
+
+    const payload = { id: auth.id };
+
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
 
   async recoverPassword(email: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
+    const auth = await this.findByEmail(email);
 
-    const token = this.jwtService.sign({ id: user.id });
+    const token = this.jwtService.sign({ id: auth.id });
     const resetUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/reset-password?token=${token}`;
 
-    await this.emailService.sendEmail(
-      user.email,
+    this.emailService.sendEmail(
+      auth.email,
       'Recupera tu contraseña',
       'recover-password',
-      { name: user.email, url: resetUrl },
+      { name: auth.email, url: resetUrl },
     );
 
-    return { message: 'Revisa tu correo para restablecer la contraseña.' };
+    return { message: 'Check your email to reset your password.' };
   }
 
   async confirmEmail(token: string) {
-    console.log({ token });
-    const { id } = this.jwtService.verify(token);
-    const user = await this.usersService.findOne(id);
+    const { email } = this.jwtService.verify(token);
+    const auth = await this.findByEmail(email);
 
-    if (!user) {
-      throw new Error('Token inválido');
-    }
+    if (auth.isEmailConfirmed)
+      throw new BadRequestException('Email already confirmed');
 
-    user.isEmailConfirmed = true;
-    return this.usersService.update(user.id, user);
+    auth.isEmailConfirmed = true;
+    await this.authRepository.save(auth);
+    return { message: `Email ${auth.email} confirmed successfully.` };
   }
 }

@@ -23,6 +23,10 @@ import { CommonModule } from './common/common.module';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
+
+      //migrations: ['./migrations/*.ts'],
+      //migrationsRun: true,
+
       autoLoadEntities: true,
       synchronize: true, // Cambiar a false en producción
     }),
