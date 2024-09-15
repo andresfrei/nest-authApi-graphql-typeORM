@@ -9,6 +9,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { EmailModule } from './email/email.module';
     UsersModule,
     AuthModule,
     EmailModule,
+    CommonModule,
   ],
 })
 export class AppModule {}
