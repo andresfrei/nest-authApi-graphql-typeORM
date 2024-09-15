@@ -29,6 +29,7 @@ Clona el repositorio:
 ```bash
 git clone https://github.com/andresfrei/nestjs-auth-base
 cd nest-auth-base
+yarn install
 ```
 
 ## Variables de entorno
