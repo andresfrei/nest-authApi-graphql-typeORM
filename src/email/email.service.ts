@@ -1,0 +1,43 @@
+import { Injectable } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
+import { ConfigService } from '@nestjs/config';
+import * as handlebars from 'handlebars';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+@Injectable()
+export class EmailService {
+  private transporter: nodemailer.Transporter;
+
+  constructor(private configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get<string>('EMAIL_HOST'),
+      port: this.configService.get<number>('EMAIL_PORT'),
+      secure: false,
+      auth: {
+        user: this.configService.get<string>('EMAIL_USER'),
+        pass: this.configService.get<string>('EMAIL_PASS'),
+      },
+    });
+  }
+
+  async sendEmail(to: string, subject: string, template: string, context: any) {
+    const templatePath = this.getTemplatePath(template);
+    const templateContent = readFileSync(templatePath, 'utf-8');
+    const compiledTemplate = handlebars.compile(templateContent);
+    const html = compiledTemplate(context);
+
+    const mailOptions = {
+      from: this.configService.get<string>('EMAIL_USER'),
+      to,
+      subject,
+      html,
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
+
+  private getTemplatePath(template: string): string {
+    return join(__dirname, 'src', 'email', 'templates', `${template}.hbs`);
+  }
+}
