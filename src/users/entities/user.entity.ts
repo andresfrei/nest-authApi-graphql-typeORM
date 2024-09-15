@@ -1,21 +1,33 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, ID } from '@nestjs/graphql';
 
 @ObjectType()
-@Entity('users')
+@Entity()
 export class User {
-  @Field(() => String)
+  @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Field(() => String)
+  @Field()
   @Column({ unique: true })
   email: string;
 
-  @Field(() => Boolean)
-  @Column({ default: false })
-  isEmailConfirmed: boolean;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  firstName?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  lastName?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  avatarUrl?: string;
 
   @Column()
-  password: string; // No exponer en GraphQL
+  password: string;
+
+  @Field()
+  @Column({ default: false })
+  isEmailConfirmed: boolean;
 }

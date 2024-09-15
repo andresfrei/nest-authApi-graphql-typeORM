@@ -3,8 +3,11 @@
 # ------------------------------------------------------
 
 type User {
-  id: String!
+  id: ID!
   email: String!
+  firstName: String
+  lastName: String
+  avatarUrl: String
   isEmailConfirmed: Boolean!
 }
 
@@ -21,4 +24,5 @@ input UpdateUserDto {
   password: String
   firstName: String
   lastName: String
+  avatarUrl: String
 }
