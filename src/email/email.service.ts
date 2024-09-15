@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import { ConfigService } from '@nestjs/config';
-import * as handlebars from 'handlebars';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import * as nodemailer from 'nodemailer';
+import * as handlebars from 'handlebars';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
@@ -38,6 +38,6 @@ export class EmailService {
   }
 
   private getTemplatePath(template: string): string {
-    return join(__dirname, 'src', 'email', 'templates', `${template}.hbs`);
+    return join(__dirname, 'templates', `${template}.hbs`);
   }
 }
