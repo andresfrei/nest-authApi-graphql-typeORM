@@ -38,6 +38,6 @@ export class EmailService {
   }
 
   private getTemplatePath(template: string): string {
-    return join(process.cwd(), 'src/email/templates', `${template}.hbs`);
+    return join(process.cwd(), 'templates', `${template}.hbs`);
   }
 }
