@@ -1,4 +1,4 @@
-import { compareSync, hashSync } from 'bcrypt';
+import { compareSync } from 'bcrypt';
 import {
   BadRequestException,
   Injectable,
@@ -23,11 +23,7 @@ export class AuthService {
   ) {}
 
   async register(registerUserDto: RegisterDto) {
-    const { password, email } = registerUserDto;
-    const auth = this.authRepository.create({
-      email,
-      password: hashSync(password, 10),
-    });
+    const auth = this.authRepository.create(registerUserDto);
 
     await this.authRepository.save(auth);
 
@@ -51,7 +47,7 @@ export class AuthService {
   }
 
   async findByEmail(email: string): Promise<Auth> {
-    const auth = await this.authRepository.findOne({ where: { email } });
+    const auth: Auth = await this.authRepository.findOne({ where: { email } });
     if (!auth) throw new UnauthorizedException('Email no register');
     return auth;
   }
@@ -60,6 +56,7 @@ export class AuthService {
     const { email, password } = loginDto;
 
     const auth = await this.findByEmail(email);
+    console.log({ auth, password });
 
     if (!compareSync(password, auth.password))
       throw new UnauthorizedException('Invalid credentials');
