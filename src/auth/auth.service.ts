@@ -2,6 +2,7 @@ import { compareSync } from 'bcrypt';
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -25,19 +26,24 @@ export class AuthService {
   async register(registerUserDto: RegisterDto) {
     const auth = this.authRepository.create(registerUserDto);
 
-    await this.authRepository.save(auth);
+    try {
+      await this.authRepository.save(auth);
+      const token = this.jwtService.sign({ email: auth.email });
+      const confirmationUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/confirm?token=${token}`;
 
-    const token = this.jwtService.sign({ email: auth.email });
-    const confirmationUrl = `${process.env.HOST}:${process.env.PORT}/api/auth/confirm?token=${token}`;
+      this.emailService.sendEmail(
+        auth.email,
+        'Confirma tu registro',
+        'confirmation',
+        { name: auth.email, url: confirmationUrl },
+      );
 
-    this.emailService.sendEmail(
-      auth.email,
-      'Confirma tu registro',
-      'confirmation',
-      { name: auth.email, url: confirmationUrl },
-    );
-
-    return { message: 'Registered user. Please check your email to confirm.' };
+      return {
+        message: 'Registered user. Please check your email to confirm.',
+      };
+    } catch (error) {
+      this.handleErrors(error);
+    }
   }
 
   async findById(id: string): Promise<Auth> {
@@ -97,5 +103,15 @@ export class AuthService {
     auth.isEmailConfirmed = true;
     await this.authRepository.save(auth);
     return { message: `Email ${auth.email} confirmed successfully.` };
+  }
+
+  private handleErrors(error: any) {
+    if (error.code === '23505') {
+      throw new UnauthorizedException(error.detail);
+    }
+
+    throw new InternalServerErrorException(
+      'Please check your server error log',
+    );
   }
 }
