@@ -3,6 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { Auth } from '../entities/auth.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -17,8 +19,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
-    // Aquí validamos el token JWT y buscamos al usuario en la base de datos
-    return await this.authService.findById(payload.id);
+  async validate(payload: JwtPayload): Promise<Auth> {
+    const { authId } = payload;
+    const auth = await this.authService.validateAuth(authId);
+    delete auth.password;
+    return auth;
   }
 }

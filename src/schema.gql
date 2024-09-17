@@ -2,25 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type User {
-  id: ID!
-  firstName: String
-  lastName: String
-  avatarUrl: String
+type JwtPayload {
+  authId: String!
+  shopId: String!
 }
 
 type Query {
-  me: User!
-}
-
-type Mutation {
-  updateUser(updateUserInput: UpdateUserDto!): User!
-}
-
-input UpdateUserDto {
-  email: String
-  password: String
-  firstName: String
-  lastName: String
-  avatarUrl: String
+  revalidate: JwtPayload!
 }

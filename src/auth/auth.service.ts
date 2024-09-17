@@ -1,3 +1,6 @@
+import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { compareSync } from 'bcrypt';
 import {
   BadRequestException,
@@ -5,15 +8,13 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
 
 import { Auth } from './entities/auth.entity';
 import { EmailService } from '../email/email.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto';
+
+import { JwtPayload } from './types';
 import { FindOptions } from './interfaces/find-options.interface';
+import { RegisterDto, LoginDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,10 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
   ) {}
+
+  private getJwtToken(jwtPayload: JwtPayload) {
+    return this.jwtService.sign(jwtPayload);
+  }
 
   async register(registerUserDto: RegisterDto) {
     const auth = this.authRepository.create(registerUserDto);
@@ -78,10 +83,11 @@ export class AuthService {
     if (!auth.isEmailConfirmed)
       throw new UnauthorizedException('Email not confirmed');
 
-    const payload = { id: auth.id };
-
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.getJwtToken({
+        authId: auth.id,
+        shopId: auth.shopId,
+      }),
     };
   }
 
@@ -111,6 +117,19 @@ export class AuthService {
     auth.isEmailConfirmed = true;
     await this.authRepository.save(auth);
     return { message: `Email ${auth.email} confirmed successfully.` };
+  }
+
+  async revalidateToken(jwtPayload: JwtPayload) {
+    const auth = await this.findById(jwtPayload.authId);
+    const token = this.getJwtToken(jwtPayload);
+    return { token, data: auth };
+  }
+
+  async validateAuth(id: string): Promise<Auth> {
+    const auth = await this.findById(id);
+    if (!auth.isActive)
+      throw new UnauthorizedException('User is inactive, talk with an admin');
+    return auth;
   }
 
   private handleErrors(error: any) {

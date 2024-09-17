@@ -14,7 +14,8 @@ export class JwtValidationPipe implements PipeTransform {
       }
 
       return value;
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error);
       throw new BadRequestException('Invalid JWT token');
     }
   }
