@@ -7,6 +7,7 @@ import {
   RecoverPasswordDto,
   RegisterDto,
 } from './dto';
+import { AuthResponse } from './types';
 
 @Controller('api/auth')
 export class AuthController {
@@ -18,7 +19,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(loginDto);
   }
 

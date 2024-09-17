@@ -12,7 +12,7 @@ import {
 import { Auth } from './entities/auth.entity';
 import { EmailService } from '../email/email.service';
 
-import { JwtPayload } from './types';
+import { AuthResponse, JwtPayload } from './types';
 import { FindOptions } from './interfaces/find-options.interface';
 import { RegisterDto, LoginDto } from './dto';
 
@@ -25,8 +25,10 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  private getJwtToken(jwtPayload: JwtPayload) {
-    return this.jwtService.sign(jwtPayload);
+  private getJwtToken(jwtPayload: JwtPayload): string {
+    const token = this.jwtService.sign(jwtPayload);
+    console.log(token);
+    return token;
   }
 
   async register(registerUserDto: RegisterDto) {
@@ -70,7 +72,7 @@ export class AuthService {
     return auth;
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
     const auth = await this.findByEmail(email, {
@@ -83,11 +85,13 @@ export class AuthService {
     if (!auth.isEmailConfirmed)
       throw new UnauthorizedException('Email not confirmed');
 
+    const { id, shopId } = auth;
+
+    const token = this.getJwtToken({ authId: id, shopId });
+
     return {
-      access_token: this.getJwtToken({
-        authId: auth.id,
-        shopId: auth.shopId,
-      }),
+      token,
+      user: { id, email, shopId },
     };
   }
 
@@ -119,10 +123,13 @@ export class AuthService {
     return { message: `Email ${auth.email} confirmed successfully.` };
   }
 
-  async revalidateToken(jwtPayload: JwtPayload) {
-    const auth = await this.findById(jwtPayload.authId);
-    const token = this.getJwtToken(jwtPayload);
-    return { token, data: auth };
+  revalidateToken(currentAuth: Auth): AuthResponse {
+    const { id, shopId, email } = currentAuth;
+    const token = this.getJwtToken({ authId: id, shopId });
+    return {
+      token,
+      user: { id, email, shopId },
+    };
   }
 
   async validateAuth(id: string): Promise<Auth> {

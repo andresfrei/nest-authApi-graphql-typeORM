@@ -4,19 +4,23 @@ import { Resolver, Query } from '@nestjs/graphql';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
-import { JwtPayload } from 'src/auth/types';
+import { AuthResponse } from 'src/auth/types';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-//import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { CurrentAuth } from 'src/auth/decorators/current-auth.decorator';
+import { Auth } from 'src/auth/entities/auth.entity';
+import { AuthService } from 'src/auth/auth.service';
 
 @Resolver(() => User)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
-  @Query(() => JwtPayload, { name: 'revalidate' })
+  @Query(() => AuthResponse, { name: 'revalidate' })
   @UseGuards(JwtAuthGuard)
-  revalidateToken(): JwtPayload {
-    //return this.authService.revalidateToken(user);
-    throw new Error('Method not implemented.');
+  revalidateToken(@CurrentAuth() auth: Auth): AuthResponse {
+    return this.authService.revalidateToken(auth);
   }
 }

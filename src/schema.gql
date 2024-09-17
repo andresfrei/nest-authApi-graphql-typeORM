@@ -2,11 +2,17 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type JwtPayload {
-  authId: String!
-  shopId: String!
+type AuthData {
+  id: String!
+  email: String!
+  shopId: String
+}
+
+type AuthResponse {
+  token: String!
+  user: AuthData!
 }
 
 type Query {
-  revalidate: JwtPayload!
+  revalidate: AuthResponse!
 }
